@@ -11,9 +11,9 @@ public enum EncryptionMode {
     CFB(true, true, EncryptionOptions.NoPadding),
     GCM(true, true, EncryptionOptions.NoPadding);
 
-    private final boolean isVectorMode;
-    private final boolean isStreamMode;
-    private final EncryptionOptions[] supportedPaddings;
+    public final boolean isVectorMode;
+    public final boolean isStreamMode;
+    public final EncryptionOptions[] supportedPaddings;
 
     EncryptionMode(boolean isVectorMode, boolean isStreamMode, EncryptionOptions... supportedPaddings) {
         this.isVectorMode = isVectorMode;
@@ -22,13 +22,8 @@ public enum EncryptionMode {
     }
 
 
-    public boolean isVectorMode() {
-        return isVectorMode;
-    }
 
-    public boolean isStreamMode() {
-        return isStreamMode;
-    }
+
 
 
     public EncryptionOptions[] getSupportedPaddings() {

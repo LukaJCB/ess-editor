@@ -70,7 +70,7 @@ public class BCCryptographer implements Cryptographer {
         }
         Cipher c = Cipher.getInstance(instanceCall, "BC");
 
-        if(encryption.mode.isVectorMode()) {
+        if(encryption.mode.isVectorMode) {
             if(encryption.getInitializationVector() != null) {
                 c.init(cipherMode, key, new IvParameterSpec(encryption.getInitializationVector()));
             } else {
