@@ -292,6 +292,7 @@ public class TextComponent extends JFrame {
                 outputText.setText(encrypted);
             } catch (IOException e) {
                 e.printStackTrace();
+                JOptionPane.showMessageDialog(this, e.getMessage());
             }
         });
 
