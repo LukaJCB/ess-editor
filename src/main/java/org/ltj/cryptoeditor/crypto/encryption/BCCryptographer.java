@@ -45,7 +45,7 @@ public class BCCryptographer implements Cryptographer {
 
     private CipherInputStream getEncryptionStream(InputStream in, Encryption encryption, SecretKey key) throws CryptographyException {
         try {
-            return new CipherInputStream(in, buildCipher(Cipher.ENCRYPT_MODE, encryption, key));
+            return new CipherInputStream(in, generateCipher(Cipher.ENCRYPT_MODE, encryption, key));
         } catch (Exception e) {
             throw new CryptographyException(e);
         }
@@ -53,34 +53,35 @@ public class BCCryptographer implements Cryptographer {
 
     private CipherInputStream getDecryptionStream(InputStream in, Encryption encryption, SecretKey key) throws CryptographyException {
         try {
-            return new CipherInputStream(in, buildCipher(Cipher.DECRYPT_MODE, encryption, key));
+            return new CipherInputStream(in, generateCipher(Cipher.DECRYPT_MODE, encryption, key));
         } catch (Exception e) {
             throw new CryptographyException(e);
         }
     }
 
-    private Cipher buildCipher(int cipherMode, Encryption encryption, SecretKey key) throws Exception {
+    private Cipher generateCipher(int cipherMode, Encryption encryption, SecretKey key) throws Exception {
         if (encryption == null) {
-            throw new IllegalStateException("BCCryptographer needs to be initialized with a valid encryption");
+            throw new IllegalStateException("BCCryptographer has to be initialized with a valid encryption");
         }
-        String instanceCall = encryption.type.getName();
+        String transformation = encryption.type.getName();
         if(!encryption.type.isStreamType()) {
-            instanceCall += "/" + encryption.mode.toString();
-            instanceCall += "/" + encryption.options;
+            transformation += "/" + encryption.mode.toString();
+            transformation += "/" + encryption.options;
         }
-        Cipher c = Cipher.getInstance(instanceCall, "BC");
+
+        Cipher cipher = Cipher.getInstance(transformation, "BC");
 
         if(encryption.mode.isVectorMode) {
             if(encryption.getInitializationVector() != null) {
-                c.init(cipherMode, key, new IvParameterSpec(encryption.getInitializationVector()));
+                cipher.init(cipherMode, key, new IvParameterSpec(encryption.getInitializationVector()));
             } else {
-                c.init(cipherMode, key);
-                encryption.setInitializationVector(c.getIV());
+                cipher.init(cipherMode, key);
+                encryption.setInitializationVector(cipher.getIV());
             }
         } else {
-            c.init(cipherMode, key);
+            cipher.init(cipherMode, key);
         }
-        return c;
+        return cipher;
     }
 
 

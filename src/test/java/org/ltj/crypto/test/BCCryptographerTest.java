@@ -22,12 +22,16 @@ public class BCCryptographerTest {
     }
 
     public final static String input = "1234567812345678";
-    public final static byte[] keyBytes = new byte[]{
-        45, 9, 89, 93,
-        39, -5, 2, 38,
-        52, -111, -91, -118,
-        0, 121, 110, 35
-    };
+    private final static SecretKey aesKey = new SecretKeySpec(new byte[]{
+            45, 9, 89, 93,
+            39, -5, 2, 38,
+            52, -111, -91, -118,
+            0, 121, 110, 35
+    }, "AES");
+    private final static SecretKey desKey = new SecretKeySpec(new byte[]{
+            45, 9, 89, 93,
+            39, -5, 2, 38
+    }, "DES");
 
     @Test
     public void testAesEcbNoPadding() throws Exception {
@@ -36,12 +40,11 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -52,12 +55,11 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES, EncryptionMode.ECB, EncryptionOptions.PKCS5Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -68,12 +70,12 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.ECB,EncryptionOptions.PKCS7Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+         
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -84,12 +86,11 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.CBC,EncryptionOptions.PKCS5Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -100,12 +101,12 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.CBC,EncryptionOptions.PKCS7Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+         
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -116,12 +117,12 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES, EncryptionMode.OFB);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -132,12 +133,11 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES, EncryptionMode.CTR);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -148,12 +148,11 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES, EncryptionMode.CFB);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -164,12 +163,27 @@ public class BCCryptographerTest {
         Encryption encryption = new Encryption(EncryptionType.AES, EncryptionMode.GCM);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,aesKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+    }
+
+    @Test
+    public void testDesEcbNoPadding() throws Exception {
+
+
+        Encryption encryption = new Encryption(EncryptionType.DES);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,encryption,desKey);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -178,15 +192,14 @@ public class BCCryptographerTest {
     @Test
     public void testDesEcbPkcs5() throws Exception {
 
-        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.ECB,EncryptionOptions.PKCS5Padding);
+        Encryption encryption = new Encryption(EncryptionType.DES,EncryptionMode.ECB,EncryptionOptions.PKCS5Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,desKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -194,15 +207,15 @@ public class BCCryptographerTest {
     @Test
     public void testDesEcbPkcs7() throws Exception {
 
-        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.ECB,EncryptionOptions.PKCS7Padding);
+        Encryption encryption = new Encryption(EncryptionType.DES,EncryptionMode.ECB,EncryptionOptions.PKCS7Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
-        String output = cryptographer.encrypt(input,encryption,key);
+
+        String output = cryptographer.encrypt(input,encryption,desKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -210,15 +223,14 @@ public class BCCryptographerTest {
     @Test
     public void testDesCbcPkcs5() throws Exception {
 
-        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.CBC,EncryptionOptions.PKCS5Padding);
+        Encryption encryption = new Encryption(EncryptionType.DES,EncryptionMode.CBC,EncryptionOptions.PKCS5Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,desKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }
@@ -226,15 +238,75 @@ public class BCCryptographerTest {
     @Test
     public void testDesCbcPkcs7() throws Exception {
 
-        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.CBC,EncryptionOptions.PKCS7Padding);
+        Encryption encryption = new Encryption(EncryptionType.DES,EncryptionMode.CBC,EncryptionOptions.PKCS7Padding);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
-        SecretKey key = new SecretKeySpec(keyBytes, "DES");
-        String output = cryptographer.encrypt(input,encryption,key);
+        String output = cryptographer.encrypt(input,encryption,desKey);
 
         Assert.assertThat(input, not(equalTo(output)));
 
-        String decrypted = cryptographer.decrypt(output,encryption,key);
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+    }
+
+    @Test
+    public void testDesOfb() throws Exception {
+
+        Encryption encryption = new Encryption(EncryptionType.DES, EncryptionMode.OFB);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+
+        String output = cryptographer.encrypt(input,encryption,desKey);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+    }
+
+    @Test
+    public void testDesCtr() throws Exception {
+
+        Encryption encryption = new Encryption(EncryptionType.DES, EncryptionMode.CTR);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,encryption,desKey);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+    }
+
+    @Test
+    public void testDesCfb() throws Exception {
+
+        Encryption encryption = new Encryption(EncryptionType.DES, EncryptionMode.CFB);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,encryption,desKey);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,encryption,desKey);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+    }
+
+    @Test
+    public void testArc4() throws Exception {
+
+        Encryption encryption = new Encryption(EncryptionType.ARC4);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,encryption,aesKey);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,encryption,aesKey);
         Assert.assertThat(input, is(equalTo(decrypted)));
 
     }

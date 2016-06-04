@@ -64,14 +64,16 @@ public class TextComponent extends JFrame {
     private EncryptionOptions options;
     private JMenu optionsMenu, modeMenu;
 
-    public final static byte[] keyBytes = new byte[]{
+    private final static SecretKey aesKey = new SecretKeySpec(new byte[]{
             45, 9, 89, 93,
             39, -5, 2, 38,
             52, -111, -91, -118,
             0, 121, 110, 35
-    };
-
-    private final static SecretKey key = new SecretKeySpec(keyBytes, "AES");
+    }, "AES");
+    private final static SecretKey desKey = new SecretKeySpec(new byte[]{
+            45, 9, 89, 93,
+            39, -5, 2, 38
+    }, "DES");
 
     //undo helpers
     protected UndoAction undoAction;
@@ -288,9 +290,10 @@ public class TextComponent extends JFrame {
         button.addActionListener(ae -> {
             BCCryptographer cryptographer = BCCryptographer.getInstance();
             try {
+                SecretKey key = getCurrentKey();
                 String encrypted = cryptographer.encrypt(textPane.getText(), encryption, key);
                 outputText.setText(encrypted);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, e.getMessage());
             }
@@ -299,11 +302,20 @@ public class TextComponent extends JFrame {
         return button;
     }
 
+    private SecretKey getCurrentKey(){
+        if (type == EncryptionType.DES)
+            return desKey;
+        else
+            return aesKey;
+
+    }
+
     private JButton createDecryptButton(){
         JButton button = new JButton("Decrypt");
         button.addActionListener(ae -> {
             BCCryptographer cryptographer = BCCryptographer.getInstance();
             try {
+                SecretKey key = getCurrentKey();
                 String decrypted = cryptographer.decrypt(textPane.getText(), encryption, key);
                 outputText.setText(decrypted);
             } catch (IOException e) {
