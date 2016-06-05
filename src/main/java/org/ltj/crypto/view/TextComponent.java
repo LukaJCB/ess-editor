@@ -331,9 +331,8 @@ public class TextComponent extends JFrame {
     private JButton createSwapButton(){
         JButton button = new JButton("Swap Values");
         button.addActionListener(ae -> {
-            String temp = textPane.getText();
             textPane.setText(outputText.getText());
-            outputText.setText(temp);
+            outputText.setText("");
         });
 
         return button;
