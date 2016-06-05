@@ -3,14 +3,19 @@ package org.ltj.cryptoeditor.crypto.encryption;
 import org.apache.commons.io.IOUtils;
 import org.ltj.cryptoeditor.crypto.exception.CryptographyException;
 
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
 
 
 public class BCCryptographer implements Cryptographer {
@@ -30,6 +35,23 @@ public class BCCryptographer implements Cryptographer {
         byte[] bytes = input.getBytes(charset);
         InputStream stream = getEncryptionStream(new ByteArrayInputStream(bytes), encryption, key);
         return streamToString(stream);
+    }
+
+    public String encrypt(String input, String password, Encryption encryption) throws Exception{
+        char[] pw = password.toCharArray();
+        byte[] salt = new byte[]{
+                0x7d, 0x60, 0x43, 0x5f,
+                0x02, (byte)0xe9, (byte)0xe0, (byte)0xae
+        };
+        int iterationCount = 2048;
+        PBEKeySpec spec = new PBEKeySpec(pw);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBEWithSHAAnd3KeyTripleDES", "BC");
+
+        Cipher cipher = Cipher.getInstance("PBEWithSHAAnd3KeyTripleDES", "BC");
+        Key key = factory.generateSecret(spec);
+
+        cipher.init(Cipher.DECRYPT_MODE,key, new PBEParameterSpec(salt, iterationCount));
+        return input;
     }
 
     public String decrypt(String input, Encryption encryption, SecretKey key) throws IOException{

@@ -154,6 +154,8 @@ public class TextComponent extends JFrame {
         mb.add(optionsMenu);
         mb.add(createEncryptButton());
         mb.add(createDecryptButton());
+        mb.add(new JSeparator(JSeparator.VERTICAL));
+        mb.add(createSwapButton());
         setJMenuBar(mb);
 
         options = EncryptionOptions.NoPadding;
@@ -321,6 +323,17 @@ public class TextComponent extends JFrame {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        });
+
+        return button;
+    }
+
+    private JButton createSwapButton(){
+        JButton button = new JButton("Swap Values");
+        button.addActionListener(ae -> {
+            String temp = textPane.getText();
+            textPane.setText(outputText.getText());
+            outputText.setText(temp);
         });
 
         return button;
