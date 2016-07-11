@@ -1,13 +1,19 @@
 package org.ltj.crypto.test;
 
+import com.google.gson.Gson;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.ltj.cryptoeditor.crypto.encryption.*;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.Key;
 import java.security.Security;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -32,6 +38,96 @@ public class BCCryptographerTest {
             45, 9, 89, 93,
             39, -5, 2, 38
     }, "DES");
+
+
+    @Test
+    public void testHashing() throws Exception {
+        Encryption encryption = new Encryption(EncryptionType.ARC4);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        HashPayload output = cryptographer.encryptWithHash(input,encryption,aesKey);
+
+        HashDecryptionResult result = cryptographer.decryptWithHash(output,encryption,aesKey);;
+        Assert.assertThat(result.temperedWith, is(equalTo(false)));
+
+        output.cipherText[9] ^= '0' ^ '9';
+
+        result = cryptographer.decryptWithHash(output,encryption,aesKey);;
+        Assert.assertThat(result.temperedWith, is(equalTo(true)));
+
+    }
+
+    @Test
+    public void testSerialization() throws Exception {
+        Encryption encryption = new Encryption(EncryptionType.ARC4);
+
+        String password = "password";
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,password,encryption);
+
+        EncryptedPackage pack = new EncryptedPackage(encryption,output,null);
+        String json = pack.toJson();
+        EncryptedPackage deserialized = EncryptedPackage.fromJson(json);
+        Assert.assertThat(deserialized.encryption.type.isStreamType(),is(equalTo(true)));
+    }
+
+    @Test
+    public void testPbeAes() throws Exception {
+
+
+        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.CTR);
+        String password = "password";
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,password,encryption);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,password,encryption);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+        String falseDecrypted = cryptographer.decrypt(output,"oassword",encryption);
+        Assert.assertThat(input, not(equalTo(falseDecrypted)));
+
+    }
+
+    @Test
+    public void testPbeDes() throws Exception {
+
+
+        Encryption encryption = new Encryption(EncryptionType.DES);
+        String password = "password";
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,password,encryption);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,password,encryption);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+        String falseDecrypted = cryptographer.decrypt(output,"oassword",encryption);
+        Assert.assertThat(input, not(equalTo(falseDecrypted)));
+
+    }
+
+    @Test
+    public void testPbeArc4() throws Exception {
+
+
+        Encryption encryption = new Encryption(EncryptionType.ARC4);
+        String password = "password";
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,password,encryption);
+
+        Assert.assertThat(input, not(equalTo(output)));
+
+        String decrypted = cryptographer.decrypt(output,password,encryption);
+        Assert.assertThat(input, is(equalTo(decrypted)));
+
+        String falseDecrypted = cryptographer.decrypt(output,"oassword",encryption);
+        Assert.assertThat(input, not(equalTo(falseDecrypted)));
+
+    }
+
 
     @Test
     public void testAesEcbNoPadding() throws Exception {

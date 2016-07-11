@@ -9,5 +9,7 @@ import java.io.IOException;
 public interface Cryptographer {
 
     String encrypt(String input, Encryption encryption, SecretKey key) throws CryptographyException, IOException;
+    String encrypt(String input, String password, Encryption encryption) throws Exception;
     String decrypt(String input, Encryption encryption, SecretKey key) throws CryptographyException, IOException;
+    String decrypt(String input, String password, Encryption encryption) throws Exception;
 }

@@ -29,7 +29,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */ 
 
-package org.ltj.crypto.view;
+package org.ltj.cryptoeditor.view;
 /*
  * TextComponent.java requires one additional file:
  *   DocumentSizeFilter.java
@@ -37,19 +37,24 @@ package org.ltj.crypto.view;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.ltj.cryptoeditor.crypto.encryption.*;
+import org.ltj.cryptoeditor.util.FileHelper;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
 import java.security.Security;
 import java.util.HashMap;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.*;
 import javax.swing.event.*;
 import javax.swing.undo.*;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import static org.ltj.cryptoeditor.util.FileHelper.readFromPath;
 
 public class TextComponent extends JFrame {
     private JTextPane textPane;
@@ -171,6 +176,41 @@ public class TextComponent extends JFrame {
         //Start watching for undoable edits and caret changes.
         doc.addUndoableEditListener(new MyUndoableEditListener());
         doc.addDocumentListener(new MyDocumentListener());
+
+
+        JMenuItem loadFile = new JMenuItem("Load");
+        loadFile.addActionListener(ae -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("JSON", "json"));
+            int result = chooser.showOpenDialog(this);
+
+
+            if (result == JFileChooser.APPROVE_OPTION){
+                String path = chooser.getCurrentDirectory().getPath();
+                String json = FileHelper.readFromPath(path);
+                EncryptedPackage packet = EncryptedPackage.fromJson(json);
+                textPane.setText(packet.payload);
+                outputText.setText("");
+                setMode(encryption.mode);
+                setType(encryption.type);
+                setOptions(encryption.options);
+            }
+        });
+
+        JMenuItem saveFile = new JMenuItem("Save");
+        loadFile.addActionListener(ae -> {
+            String name = JOptionPane.showInputDialog(this, "Choose a name for your File.");
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Choose Directory");
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(false);
+            int state = chooser.showOpenDialog(this);
+            if (state == JFileChooser.APPROVE_OPTION){
+                EncryptedPackage packet = new EncryptedPackage(encryption,outputText.getText(),null);
+                FileHelper.writeToPath(packet.toJson(), chooser.getCurrentDirectory().getPath() + File.pathSeparator + name + ".json");
+            }
+        });
     }
 
     private JMenu createTypeMenu(){

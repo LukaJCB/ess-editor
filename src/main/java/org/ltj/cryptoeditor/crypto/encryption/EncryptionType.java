@@ -20,6 +20,30 @@ public enum EncryptionType {
         return name;
     }
 
+    public int getKeyLength(){
+        switch (this){
+            case AES:
+                return 128;
+            case DES:
+                return 64;
+            case ARC4:
+                return 256;
+        }
+        return 128;
+    }
+
+    public String getPbeType(){
+        switch (this){
+            case AES:
+                return "PBEWITHSHA256AND128BITAES-CBC-BC";
+            case DES:
+                return "PBEWithMD5AndDES";
+            case ARC4:
+                return "PBEWithSHAAnd40BitRC4";
+        }
+        return "PBEWITHSHA256AND128BITAES-CBC-BC";
+    }
+
     public boolean isStreamType() {
         return isStreamType;
     }
