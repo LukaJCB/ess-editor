@@ -7,7 +7,8 @@ package org.ltj.cryptoeditor.crypto.encryption;
 public enum EncryptionType {
     AES(false, EncryptionMode.values()),
     DES(false, EncryptionMode.values()),
-    ARC4(true, new EncryptionMode[0]);
+    ARC4(true, new EncryptionMode[0]),
+    RSA(true, new EncryptionMode[0]);
 
     /**
      * true if the given type is a stream type (e.g. RC4)

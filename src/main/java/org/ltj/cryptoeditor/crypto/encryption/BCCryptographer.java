@@ -110,10 +110,16 @@ public class BCCryptographer implements Cryptographer {
      * @return the generated key
      * @throws Exception
      */
-    public RSAPublicKey generatePublicKey(String modulo) throws Exception{
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
-        RSAPublicKeySpec spec = new RSAPublicKeySpec(new BigInteger(modulo, 16), new BigInteger("11", 16));
-        return (RSAPublicKey)keyFactory.generatePublic(spec);
+    public RSAPublicKey generatePublicKey(String modulo) {
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
+            RSAPublicKeySpec spec = new RSAPublicKeySpec(new BigInteger(modulo, 16), new BigInteger("11", 16));
+
+            return (RSAPublicKey) keyFactory.generatePublic(spec);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -123,10 +129,15 @@ public class BCCryptographer implements Cryptographer {
      * @return the generated key
      * @throws Exception
      */
-    public RSAPrivateKey generatePrivateKey(String modulo, String privateExponent) throws Exception{
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
-        RSAPrivateKeySpec spec = new RSAPrivateKeySpec(new BigInteger(modulo, 16), new BigInteger(privateExponent, 16));
-        return (RSAPrivateKey)keyFactory.generatePrivate(spec);
+    public RSAPrivateKey generatePrivateKey(String modulo, String privateExponent){
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA", "BC");
+            RSAPrivateKeySpec spec = new RSAPrivateKeySpec(new BigInteger(modulo, 16), new BigInteger(privateExponent, 16));
+            return (RSAPrivateKey)keyFactory.generatePrivate(spec);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

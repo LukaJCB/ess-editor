@@ -44,6 +44,8 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.security.Security;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 
 import javax.swing.*;
@@ -68,7 +70,7 @@ public class TextComponent extends JFrame {
     private EncryptionOptions options;
     private JMenu optionsMenu, modeMenu;
     private String password = "";
-    private JCheckBoxMenuItem pbeBox, hashBox;
+    private JCheckBox pbeBox, hashBox;
 
     private final static SecretKey aesKey = new SecretKeySpec(new byte[]{
             45, 9, 89, 93,
@@ -81,6 +83,9 @@ public class TextComponent extends JFrame {
             39, -5, 2, 38
     }, "DES");
 
+    private final RSAPublicKey publicKey = BCCryptographer.getInstance().generatePublicKey("d46f473a2d746537de2056ae3092c451");
+    private final RSAPrivateKey privateKey = BCCryptographer.getInstance().generatePrivateKey("d46f473a2d746537de2056ae3092c451","57791d5430d593164082036ad8b29fb1");
+
     //undo helpers
     protected UndoAction undoAction;
     protected RedoAction redoAction;
@@ -89,6 +94,8 @@ public class TextComponent extends JFrame {
 
     //The standard main method.
     public static void main(String[] args) {
+
+        Security.addProvider(new BouncyCastleProvider());
         //Schedule a job for the event dispatch thread:
         //creating and showing this application's GUI.
         SwingUtilities.invokeLater(new Runnable() {
@@ -102,7 +109,7 @@ public class TextComponent extends JFrame {
 
     private static void createAndShowGUI() {
 
-        Security.addProvider(new BouncyCastleProvider());
+
 
         //Create and set up the window.
         final TextComponent frame = new TextComponent();
@@ -162,7 +169,7 @@ public class TextComponent extends JFrame {
         mb.add(optionsMenu);
 
 
-        pbeBox = new JCheckBoxMenuItem("PBE");
+        pbeBox = new JCheckBox("PBE");
         pbeBox.addActionListener(ae -> {
             if (pbeBox.isSelected()){
                 promptPassword();
@@ -170,19 +177,11 @@ public class TextComponent extends JFrame {
         });
         mb.add(pbeBox);
 
-        hashBox = new JCheckBoxMenuItem("Hash");
-        hashBox.addActionListener(ae -> {
-            if (hashBox.isSelected()){
+        hashBox = new JCheckBox("Hash");
 
-            }
-        });
         mb.add(hashBox);
 
         mb.add(new JSeparator(JSeparator.VERTICAL));
-        mb.add(createEncryptButton());
-        mb.add(createDecryptButton());
-        mb.add(new JSeparator(JSeparator.VERTICAL));
-        mb.add(createSwapButton());
         setJMenuBar(mb);
 
         options = EncryptionOptions.NoPadding;
@@ -218,49 +217,8 @@ public class TextComponent extends JFrame {
 
 
             if (result == JFileChooser.APPROVE_OPTION){
-                try {
-                    String path = chooser.getSelectedFile().getPath();
-                    String json = FileHelper.readFromPath(path);
-                    EncryptedPackage packet = EncryptedPackage.fromJson(json);
-                    BCCryptographer cryptographer = BCCryptographer.getInstance();
-                    outputText.setText("");
-                    setType(packet.encryption.type);
-                    setMode(packet.encryption.mode);
-                    setOptions(packet.encryption.options);
-                    encryption = packet.encryption;
-                    pbeBox.setSelected(packet.needsPassword);
-
-                    boolean hashingEnabled = packet.checkSum != null;
-                    hashBox.setSelected(hashingEnabled);
-
-                    if (packet.needsPassword){
-                        promptPassword();
-
-                        if (hashingEnabled){
-                            HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,password,encryption);
-                            if (decrypted.temperedWith){
-                                JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
-                            } else {
-                                textPane.setText(decrypted.plainText);
-                            }
-                        } else {
-                            textPane.setText(decrypt(cryptographer));
-                        }
-                    } else {
-                        if (hashingEnabled){
-                            HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,encryption,getCurrentKey());
-                            if (decrypted.temperedWith){
-                                JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
-                            } else {
-                                textPane.setText(decrypted.plainText);
-                            }
-                        } else {
-                            textPane.setText(decrypt(cryptographer));
-                        }
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(this, e.getMessage());
-                }
+                String path = chooser.getSelectedFile().getPath();
+                loadFromJson(path);
             }
         });
 
@@ -273,6 +231,7 @@ public class TextComponent extends JFrame {
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             chooser.setAcceptAllFileFilterUsed(false);
             int state = chooser.showOpenDialog(this);
+
             if (state == JFileChooser.APPROVE_OPTION){
                 try {
                     EncryptedPackage packet;
@@ -300,6 +259,53 @@ public class TextComponent extends JFrame {
         file.add(saveFile);
 
         return file;
+    }
+
+    private void loadFromJson(String path){
+        try {
+            String json = FileHelper.readFromPath(path);
+            EncryptedPackage packet = EncryptedPackage.fromJson(json);
+            BCCryptographer cryptographer = BCCryptographer.getInstance();
+            outputText.setText("");
+            setType(packet.encryption.type);
+            setMode(packet.encryption.mode);
+            setOptions(packet.encryption.options);
+            encryption = packet.encryption;
+            pbeBox.setSelected(packet.needsPassword);
+
+            boolean hashingEnabled = packet.checkSum != null;
+            hashBox.setSelected(hashingEnabled);
+
+            if (packet.needsPassword){
+                promptPassword();
+
+                if (hashingEnabled){
+                    HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,password,encryption);
+                    if (decrypted.temperedWith){
+                        JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
+                    } else {
+                        textPane.setText(decrypted.plainText);
+                    }
+                } else {
+                    textPane.setText(packet.payload);
+                    textPane.setText(decrypt(cryptographer));
+                }
+            } else {
+                if (hashingEnabled){
+                    HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,encryption,getCurrentKey());
+                    if (decrypted.temperedWith){
+                        JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
+                    } else {
+                        textPane.setText(decrypted.plainText);
+                    }
+                } else {
+                    textPane.setText(packet.payload);
+                    textPane.setText(decrypt(cryptographer));
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, e.getMessage());
+        }
     }
 
     private JMenu createTypeMenu(){
@@ -416,22 +422,13 @@ public class TextComponent extends JFrame {
         encryption = new Encryption(type,mode,options);
     }
 
-    private JButton createEncryptButton(){
-        JButton button = new JButton("Encrypt");
-        button.addActionListener(ae -> {
-            BCCryptographer cryptographer = BCCryptographer.getInstance();
-            try {
-                String encrypted = encrypt(cryptographer);
-                outputText.setText(encrypted);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, e.getMessage());
-            }
-        });
 
-        return button;
-    }
 
     private String encrypt(BCCryptographer cryptographer) throws Exception{
+        if (type == EncryptionType.RSA){
+            return cryptographer.encryptRsa(textPane.getText(),publicKey);
+        }
+
         if (pbeBox.isSelected()){
             return cryptographer.encrypt(textPane.getText(),password, encryption);
         } else {
@@ -447,22 +444,13 @@ public class TextComponent extends JFrame {
 
     }
 
-    private JButton createDecryptButton(){
-        JButton button = new JButton("Decrypt");
-        button.addActionListener(ae -> {
-            BCCryptographer cryptographer = BCCryptographer.getInstance();
-            try {
-                String decrypted = decrypt(cryptographer);
-                outputText.setText(decrypted);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
 
-        return button;
-    }
 
     private String decrypt(BCCryptographer cryptographer) throws Exception{
+        if (type == EncryptionType.RSA){
+            return cryptographer.decryptRsa(textPane.getText(),privateKey);
+        }
+
         if (pbeBox.isSelected()){
             return cryptographer.decrypt(textPane.getText(),password, encryption);
         } else {
@@ -470,15 +458,7 @@ public class TextComponent extends JFrame {
         }
     }
 
-    private JButton createSwapButton(){
-        JButton button = new JButton("Swap Values");
-        button.addActionListener(ae -> {
-            textPane.setText(outputText.getText());
-            outputText.setText("");
-        });
 
-        return button;
-    }
 
     //This one listens for edits that can be undone.
     protected class MyUndoableEditListener
