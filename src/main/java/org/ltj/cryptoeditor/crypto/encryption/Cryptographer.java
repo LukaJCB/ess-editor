@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
-
+/**
+ * Describes the interface for encrypting and decrypting using various methods.
+ */
 public interface Cryptographer {
 
     /**

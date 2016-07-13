@@ -1,7 +1,7 @@
 package org.ltj.cryptoeditor.crypto.encryption;
 
 /**
- * Created by Luka on 11.07.2016.
+ * The Result of encrypting with a hash.
  */
 public class HashPayload {
 
