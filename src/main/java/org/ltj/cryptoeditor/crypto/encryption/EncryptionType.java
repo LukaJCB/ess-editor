@@ -1,25 +1,33 @@
 package org.ltj.cryptoeditor.crypto.encryption;
 
 
+/**
+ * The type of the encryption to use
+ */
 public enum EncryptionType {
-    AES("AES", false, EncryptionMode.values()),
-    DES("DES", false, EncryptionMode.values()),
-    ARC4("ARC4", true, new EncryptionMode[0]);
+    AES(false, EncryptionMode.values()),
+    DES(false, EncryptionMode.values()),
+    ARC4(true, new EncryptionMode[0]);
 
-    private final String name;
-    private final boolean isStreamType;
-    private final EncryptionMode[] supportedModes;
+    /**
+     * true if the given type is a stream type (e.g. RC4)
+     */
+    public final boolean isStreamType;
+    /**
+     * The supported modes for this encryptionType
+     */
+    public final EncryptionMode[] supportedModes;
 
-    EncryptionType(String name, boolean isStreamType, EncryptionMode[] supportedModes) {
-        this.name = name;
+    EncryptionType(boolean isStreamType, EncryptionMode[] supportedModes) {
         this.isStreamType = isStreamType;
         this.supportedModes = supportedModes;
     }
 
-    public String getName() {
-        return name;
-    }
 
+    /**
+     * Returns the Recommended length of the key for this type.
+     * @return the  recommended key length
+     */
     public int getKeyLength(){
         switch (this){
             case AES:
@@ -32,6 +40,10 @@ public enum EncryptionType {
         return 128;
     }
 
+    /**
+     * The Algorithm to use with this encryption type.
+     * @return a String representing the algorithm to use
+     */
     public String getPbeType(){
         switch (this){
             case AES:
@@ -44,12 +56,5 @@ public enum EncryptionType {
         return "PBEWITHSHA256AND128BITAES-CBC-BC";
     }
 
-    public boolean isStreamType() {
-        return isStreamType;
-    }
-
-    public EncryptionMode[] getSupportedModes() {
-        return supportedModes;
-    }
 
 }

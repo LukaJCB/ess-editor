@@ -13,8 +13,14 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.Security;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -41,34 +47,78 @@ public class BCCryptographerTest {
 
 
     @Test
-    public void testHashing() throws Exception {
+    public void testRsa() throws Exception {
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+
+        RSAPublicKey publicKey = cryptographer.generatePublicKey("d46f473a2d746537de2056ae3092c451");
+        RSAPrivateKey privateKey = cryptographer.generatePrivateKey("d46f473a2d746537de2056ae3092c451","57791d5430d593164082036ad8b29fb1");
+
+        String cipherText = cryptographer.encryptRsa(input,publicKey);
+        Assert.assertThat(input, not(equalTo(cipherText)));
+
+        String plainText = cryptographer.decryptRsa(cipherText,privateKey);
+
+        Assert.assertThat(input, is(equalTo(plainText)));
+    }
+
+    @Test
+    public void testDigestNoTamper() throws Exception {
         Encryption encryption = new Encryption(EncryptionType.ARC4);
 
         BCCryptographer cryptographer = BCCryptographer.getInstance();
         HashPayload output = cryptographer.encryptWithHash(input,encryption,aesKey);
 
-        HashDecryptionResult result = cryptographer.decryptWithHash(output,encryption,aesKey);;
+        HashDecryptionResult result = cryptographer.decryptWithHash(output,encryption,aesKey);
         Assert.assertThat(result.temperedWith, is(equalTo(false)));
-
-        output.cipherText[9] ^= '0' ^ '9';
-
-        result = cryptographer.decryptWithHash(output,encryption,aesKey);;
-        Assert.assertThat(result.temperedWith, is(equalTo(true)));
+        Assert.assertThat(result.plainText, is(equalTo(input)));
 
     }
 
     @Test
-    public void testSerialization() throws Exception {
+    public void testDigestTampered() throws Exception {
+        Encryption encryption = new Encryption(EncryptionType.ARC4);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        HashPayload output = cryptographer.encryptWithHash(input,encryption,aesKey);
+
+        byte[] tampered = output.cipherText.getBytes();
+        tampered[9] ^= '0' ^ '9';
+        HashPayload tamperedPayload = new HashPayload(new String(tampered),output.ctLength);
+
+        HashDecryptionResult result = cryptographer.decryptWithHash(tamperedPayload,encryption,aesKey);
+        Assert.assertThat(result.temperedWith, is(equalTo(true)));
+        Assert.assertThat(result.plainText, not(equalTo(input)));
+    }
+
+
+
+    @Test
+    public void testSerializationArc4() throws Exception {
         Encryption encryption = new Encryption(EncryptionType.ARC4);
 
         String password = "password";
         BCCryptographer cryptographer = BCCryptographer.getInstance();
         String output = cryptographer.encrypt(input,password,encryption);
 
-        EncryptedPackage pack = new EncryptedPackage(encryption,output,null);
+        EncryptedPackage pack = new EncryptedPackage(encryption,output,false,null);
+        String json = pack.toJson();
+        System.out.println(json);
+        EncryptedPackage deserialized = EncryptedPackage.fromJson(json);
+        Assert.assertThat(deserialized.encryption.type.isStreamType,is(equalTo(true)));
+    }
+
+    @Test
+    public void testSerializationAes() throws Exception {
+        Encryption encryption = new Encryption(EncryptionType.AES,EncryptionMode.GCM);
+
+        BCCryptographer cryptographer = BCCryptographer.getInstance();
+        String output = cryptographer.encrypt(input,encryption,aesKey);
+
+        EncryptedPackage pack = new EncryptedPackage(encryption,output,false,null);
         String json = pack.toJson();
         EncryptedPackage deserialized = EncryptedPackage.fromJson(json);
-        Assert.assertThat(deserialized.encryption.type.isStreamType(),is(equalTo(true)));
+        Assert.assertThat(deserialized.encryption.mode.isStreamMode,is(equalTo(true)));
     }
 
     @Test

@@ -60,7 +60,6 @@ public class TextComponent extends JFrame {
     private JTextPane textPane;
     private AbstractDocument doc;
     private JTextArea outputText;
-    private String newline = "\n";
     private HashMap<Object, Action> actions;
 
     private Encryption encryption;
@@ -68,6 +67,8 @@ public class TextComponent extends JFrame {
     private EncryptionType type;
     private EncryptionOptions options;
     private JMenu optionsMenu, modeMenu;
+    private String password = "";
+    private JCheckBoxMenuItem pbeBox, hashBox;
 
     private final static SecretKey aesKey = new SecretKeySpec(new byte[]{
             45, 9, 89, 93,
@@ -128,7 +129,7 @@ public class TextComponent extends JFrame {
             System.exit(-1);
         }
         JScrollPane scrollPane = new JScrollPane(textPane);
-        scrollPane.setPreferredSize(new Dimension(600, 400));
+        scrollPane.setPreferredSize(new Dimension(800, 480));
 
         //Create the text area for the status log and configure it.
         outputText = new JTextArea(5, 30);
@@ -147,8 +148,10 @@ public class TextComponent extends JFrame {
 
         //Set up the menu bar.
         actions=createActionTable(textPane);
+        JMenu fileMenu = createFileMenu();
         JMenu editMenu = createEditMenu();
         JMenuBar mb = new JMenuBar();
+        mb.add(fileMenu);
         mb.add(editMenu);
         mb.add(createTypeMenu());
 
@@ -157,6 +160,25 @@ public class TextComponent extends JFrame {
 
         mb.add(modeMenu);
         mb.add(optionsMenu);
+
+
+        pbeBox = new JCheckBoxMenuItem("PBE");
+        pbeBox.addActionListener(ae -> {
+            if (pbeBox.isSelected()){
+                promptPassword();
+            }
+        });
+        mb.add(pbeBox);
+
+        hashBox = new JCheckBoxMenuItem("Hash");
+        hashBox.addActionListener(ae -> {
+            if (hashBox.isSelected()){
+
+            }
+        });
+        mb.add(hashBox);
+
+        mb.add(new JSeparator(JSeparator.VERTICAL));
         mb.add(createEncryptButton());
         mb.add(createDecryptButton());
         mb.add(new JSeparator(JSeparator.VERTICAL));
@@ -178,6 +200,16 @@ public class TextComponent extends JFrame {
         doc.addDocumentListener(new MyDocumentListener());
 
 
+
+    }
+
+    private void promptPassword(){
+        password = JOptionPane.showInputDialog(this, "Choose a password.");
+    }
+
+    private JMenu createFileMenu(){
+        JMenu file = new JMenu("File");
+
         JMenuItem loadFile = new JMenuItem("Load");
         loadFile.addActionListener(ae -> {
             JFileChooser chooser = new JFileChooser();
@@ -186,19 +218,54 @@ public class TextComponent extends JFrame {
 
 
             if (result == JFileChooser.APPROVE_OPTION){
-                String path = chooser.getCurrentDirectory().getPath();
-                String json = FileHelper.readFromPath(path);
-                EncryptedPackage packet = EncryptedPackage.fromJson(json);
-                textPane.setText(packet.payload);
-                outputText.setText("");
-                setMode(encryption.mode);
-                setType(encryption.type);
-                setOptions(encryption.options);
+                try {
+                    String path = chooser.getSelectedFile().getPath();
+                    String json = FileHelper.readFromPath(path);
+                    EncryptedPackage packet = EncryptedPackage.fromJson(json);
+                    BCCryptographer cryptographer = BCCryptographer.getInstance();
+                    outputText.setText("");
+                    setType(packet.encryption.type);
+                    setMode(packet.encryption.mode);
+                    setOptions(packet.encryption.options);
+                    encryption = packet.encryption;
+                    pbeBox.setSelected(packet.needsPassword);
+
+                    boolean hashingEnabled = packet.checkSum != null;
+                    hashBox.setSelected(hashingEnabled);
+
+                    if (packet.needsPassword){
+                        promptPassword();
+
+                        if (hashingEnabled){
+                            HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,password,encryption);
+                            if (decrypted.temperedWith){
+                                JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
+                            } else {
+                                textPane.setText(decrypted.plainText);
+                            }
+                        } else {
+                            textPane.setText(decrypt(cryptographer));
+                        }
+                    } else {
+                        if (hashingEnabled){
+                            HashDecryptionResult decrypted = cryptographer.decryptWithHash(packet.checkSum,encryption,getCurrentKey());
+                            if (decrypted.temperedWith){
+                                JOptionPane.showMessageDialog(this, "Your Message has been tampered with! Please advise with your Security Team!");
+                            } else {
+                                textPane.setText(decrypted.plainText);
+                            }
+                        } else {
+                            textPane.setText(decrypt(cryptographer));
+                        }
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage());
+                }
             }
         });
 
         JMenuItem saveFile = new JMenuItem("Save");
-        loadFile.addActionListener(ae -> {
+        saveFile.addActionListener(ae -> {
             String name = JOptionPane.showInputDialog(this, "Choose a name for your File.");
 
             JFileChooser chooser = new JFileChooser();
@@ -207,10 +274,32 @@ public class TextComponent extends JFrame {
             chooser.setAcceptAllFileFilterUsed(false);
             int state = chooser.showOpenDialog(this);
             if (state == JFileChooser.APPROVE_OPTION){
-                EncryptedPackage packet = new EncryptedPackage(encryption,outputText.getText(),null);
-                FileHelper.writeToPath(packet.toJson(), chooser.getCurrentDirectory().getPath() + File.pathSeparator + name + ".json");
+                try {
+                    EncryptedPackage packet;
+                    BCCryptographer cryptographer = BCCryptographer.getInstance();
+                    if (hashBox.isSelected()){
+                        HashPayload payload;
+                        if (pbeBox.isSelected()){
+                            payload = cryptographer.encryptWithHash(textPane.getText(), password, encryption);
+                        } else {
+                            payload = cryptographer.encryptWithHash(textPane.getText(), encryption,getCurrentKey());
+
+                        }
+                        packet = new EncryptedPackage(encryption,payload.cipherText,pbeBox.isSelected(),payload);
+                    } else {
+                        packet = new EncryptedPackage(encryption,encrypt(cryptographer),pbeBox.isSelected(),null);
+                    }
+                    FileHelper.writeToPath(packet.toJson(), chooser.getSelectedFile().getPath() + File.separatorChar + name + ".json");
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, e.getMessage());
+                }
             }
         });
+
+        file.add(loadFile);
+        file.add(saveFile);
+
+        return file;
     }
 
     private JMenu createTypeMenu(){
@@ -242,7 +331,7 @@ public class TextComponent extends JFrame {
     private void resetModes(){
         modeMenu.removeAll();
         ButtonGroup group = new ButtonGroup();
-        for (EncryptionMode m : type.getSupportedModes()){
+        for (EncryptionMode m : type.supportedModes){
             JRadioButtonMenuItem item = new JRadioButtonMenuItem(m.toString());
             group.add(item);
             modeMenu.add(item);
@@ -252,7 +341,7 @@ public class TextComponent extends JFrame {
         }
         if (group.getElements().hasMoreElements()){
             group.getElements().nextElement().setSelected(true);
-            mode = type.getSupportedModes()[0];
+            mode = type.supportedModes[0];
         } else {
             mode = null;
         }
@@ -291,7 +380,7 @@ public class TextComponent extends JFrame {
 
         if (mode != null) {
             ButtonGroup group = new ButtonGroup();
-            for (EncryptionOptions o : mode.getSupportedPaddings()) {
+            for (EncryptionOptions o : mode.supportedPaddings) {
                 JRadioButtonMenuItem item = new JRadioButtonMenuItem(o.toString());
                 group.add(item);
                 optionsMenu.add(item);
@@ -332,16 +421,22 @@ public class TextComponent extends JFrame {
         button.addActionListener(ae -> {
             BCCryptographer cryptographer = BCCryptographer.getInstance();
             try {
-                SecretKey key = getCurrentKey();
-                String encrypted = cryptographer.encrypt(textPane.getText(), encryption, key);
+                String encrypted = encrypt(cryptographer);
                 outputText.setText(encrypted);
             } catch (Exception e) {
-                e.printStackTrace();
                 JOptionPane.showMessageDialog(this, e.getMessage());
             }
         });
 
         return button;
+    }
+
+    private String encrypt(BCCryptographer cryptographer) throws Exception{
+        if (pbeBox.isSelected()){
+            return cryptographer.encrypt(textPane.getText(),password, encryption);
+        } else {
+            return cryptographer.encrypt(textPane.getText(), encryption, getCurrentKey());
+        }
     }
 
     private SecretKey getCurrentKey(){
@@ -357,15 +452,22 @@ public class TextComponent extends JFrame {
         button.addActionListener(ae -> {
             BCCryptographer cryptographer = BCCryptographer.getInstance();
             try {
-                SecretKey key = getCurrentKey();
-                String decrypted = cryptographer.decrypt(textPane.getText(), encryption, key);
+                String decrypted = decrypt(cryptographer);
                 outputText.setText(decrypted);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
 
         return button;
+    }
+
+    private String decrypt(BCCryptographer cryptographer) throws Exception{
+        if (pbeBox.isSelected()){
+            return cryptographer.decrypt(textPane.getText(),password, encryption);
+        } else {
+            return cryptographer.decrypt(textPane.getText(), encryption, getCurrentKey());
+        }
     }
 
     private JButton createSwapButton(){

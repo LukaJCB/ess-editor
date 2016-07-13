@@ -5,10 +5,10 @@ package org.ltj.cryptoeditor.crypto.encryption;
  */
 public class HashPayload {
 
-    public final byte[] cipherText;
+    public final String cipherText;
     public final int ctLength;
 
-    public HashPayload(byte[] cipherText, int ctLength){
+    public HashPayload(String cipherText, int ctLength){
         this.cipherText = cipherText;
         this.ctLength = ctLength;
     }

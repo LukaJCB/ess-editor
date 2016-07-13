@@ -3,17 +3,19 @@ package org.ltj.cryptoeditor.crypto.encryption;
 import com.google.gson.Gson;
 
 /**
- * Created by Luka on 11.07.2016.
+ * Represents the documents to be parsed to JSON that incorporates all things necessary to decrypt the message inside.
  */
 public class EncryptedPackage {
 
     public final Encryption encryption;
     public final String payload;
-    public final String checkSum;
+    public final boolean needsPassword;
+    public final HashPayload checkSum;
 
-    public EncryptedPackage(Encryption encryption, String payload, String checkSum){
+    public EncryptedPackage(Encryption encryption, String payload,boolean needsPassword, HashPayload checkSum){
         this.encryption = encryption;
         this.payload = payload;
+        this.needsPassword = needsPassword;
         this.checkSum = checkSum;
     }
 

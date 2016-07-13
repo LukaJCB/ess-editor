@@ -1,8 +1,13 @@
 package org.ltj.cryptoeditor.crypto.encryption;
 
-
+/**
+ * The Class holding the information on how to encrypt and decrypt a given message symmetrically.
+ */
 public class Encryption {
 
+    /**
+     *
+     */
     public final EncryptionType type;
 
     public final EncryptionMode mode;
