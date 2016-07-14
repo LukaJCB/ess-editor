@@ -70,7 +70,7 @@ public class BCCryptographerTest {
         HashPayload output = cryptographer.encryptWithHash(input,encryption,aesKey);
 
         HashDecryptionResult result = cryptographer.decryptWithHash(output,encryption,aesKey);
-        Assert.assertThat(result.temperedWith, is(equalTo(false)));
+        Assert.assertFalse(result.temperedWith);
         Assert.assertThat(result.plainText, is(equalTo(input)));
 
     }
@@ -87,7 +87,7 @@ public class BCCryptographerTest {
         HashPayload tamperedPayload = new HashPayload(new String(tampered),output.ctLength);
 
         HashDecryptionResult result = cryptographer.decryptWithHash(tamperedPayload,encryption,aesKey);
-        Assert.assertThat(result.temperedWith, is(equalTo(true)));
+        Assert.assertTrue(result.temperedWith);
         Assert.assertThat(result.plainText, not(equalTo(input)));
     }
 
@@ -103,9 +103,8 @@ public class BCCryptographerTest {
 
         EncryptedPackage pack = new EncryptedPackage(encryption,output,false,null);
         String json = pack.toJson();
-        System.out.println(json);
         EncryptedPackage deserialized = EncryptedPackage.fromJson(json);
-        Assert.assertThat(deserialized.encryption.type.isStreamType,is(equalTo(true)));
+        Assert.assertTrue(deserialized.encryption.type.isStreamType);
     }
 
     @Test
@@ -118,7 +117,7 @@ public class BCCryptographerTest {
         EncryptedPackage pack = new EncryptedPackage(encryption,output,false,null);
         String json = pack.toJson();
         EncryptedPackage deserialized = EncryptedPackage.fromJson(json);
-        Assert.assertThat(deserialized.encryption.mode.isStreamMode,is(equalTo(true)));
+        Assert.assertTrue(deserialized.encryption.mode.isStreamMode);
     }
 
     @Test
